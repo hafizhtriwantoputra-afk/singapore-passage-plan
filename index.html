@@ -381,7 +381,12 @@ function buildLib(L,ovS,ovT,variants){const N=NET.nodes;let tot=0;const W=L.wp.m
    ...cr.map(c=>`<b>Auto-corrected</b> WP${c[1]}: ${esc(c[2])} — check the original file.`),
    ...(L.ext?["Route to/from a Malaysian port — crosses the Singapore Strait TSS."]:[]),
    "Must be verified on corrected ENC/ECDIS and the latest Port Marine Notices."]}}
-function buildRoute(s,t,a,b){const r=buildRoute0(s,t,a,b);if(r)applyNotes(r.wp);return r}
+// Auto remark for WP1 / last WP when empty (or the anchorage placeholder): report to the control of the start/end place.
+function ctlOf(id){const n=NET.nodes[id];if(!n)return null;if(n.term==="Brani"||/^B_Brani/.test(id))return "Keppel Control VHF Ch. 05";const a=n.anc&&DATA.anc.find(x=>x.c===n.anc);return a&&a.s==="Eastern"?"East Control VHF Ch. 12":null}
+function fillEnds(wp){[[0,"Departure"],[wp.length-1,"Arrival"]].forEach(([i,kind])=>{if(wp.length<2)return;const w=wp[i],c=w.id&&!/manual position/.test(w.name||"")?ctlOf(w.id):null;if(!c)return;
+ const txt=String(w.note||"").replace(/<[^>]+>/g,"").trim();if(txt&&!/posisi labuh/.test(txt))return;
+ const pre=(String(w.note||"").match(/^<i>\[draf\]<\/i>\s*/)||[""])[0],r=kind+" Report to "+c;w.note=pre+r;w.remark=r});return wp}
+function buildRoute(s,t,a,b){const r=buildRoute0(s,t,a,b);if(r){applyNotes(r.wp);fillEnds(r.wp)}return r}
 function buildRoute0(s,t,ovS,ovT){const V=libFor(s,t);if(V.length&&!$("ppNoLib").checked){return buildLib(V[Math.min(libPick,V.length-1)],ovS,ovT,V)}
  let p=netPath(s,t);if(!p)return null;
  {const N0=NET.nodes;let ch=true;while(ch&&p.length>2){ch=false;for(let i=1;i<p.length-1;i++){const a=N0[p[i-1]],b=N0[p[i]],c=N0[p[i+1]];if(b.type==="tujuan")continue;
