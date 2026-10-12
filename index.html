@@ -94,19 +94,20 @@ text{font-family:Arial,Helvetica,sans-serif;pointer-events:none}
 #intro .zm{width:min(62vw,230px);opacity:0;animation:cmpIn .4s ease-out forwards,cmpZoom .65s 1.7s cubic-bezier(.55,0,.9,.45) forwards}
 #intro .zm svg{display:block;width:100%;height:auto;animation:cmpSpin 1.3s .3s cubic-bezier(.6,.05,.2,1) both}
 #intro .it{font:600 22px/1 "IBM Plex Sans",system-ui,sans-serif;letter-spacing:.2em;text-indent:.2em;opacity:0;animation:cmpTxt .5s .5s ease-out forwards,cmpTxtOut .3s 1.7s ease-in forwards}
+#intro .is{font:500 12px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.14em;text-indent:.14em;color:#C9D4DE;margin-top:-14px;opacity:0;animation:cmpTxt .5s .7s ease-out forwards,cmpTxtOut .3s 1.7s ease-in forwards}
 @keyframes cmpBg{to{background-color:rgba(14,58,91,0)}}
 @keyframes cmpIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 @keyframes cmpSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes cmpZoom{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(11)}}
 @keyframes cmpTxt{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes cmpTxtOut{to{opacity:0}}
-@media (prefers-reduced-motion:reduce){#intro,#intro .zm,#intro .zm svg,#intro .it{animation:none}#intro .zm,#intro .it{opacity:1}}
+@media (prefers-reduced-motion:reduce){#intro,#intro .zm,#intro .zm svg,#intro .it,#intro .is{animation:none}#intro .zm,#intro .it,#intro .is{opacity:1}}
 </style></head>
 <body>
 <div id="intro" aria-hidden="true"><div class="zm"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="93" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><circle cx="100" cy="100" r="84" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="7" stroke-dasharray="1 13.66" transform="rotate(-.5 100 100)"/>
 <g fill="#fff" font-family="IBM Plex Sans,system-ui,sans-serif" font-weight="600" font-size="14" text-anchor="middle"><text x="100" y="40" fill="#C9711B">N</text><text x="166" y="105">E</text><text x="100" y="170">S</text><text x="34" y="105">W</text></g>
 <polygon points="100,46 109,100 91,100" fill="#C9711B"/><polygon points="100,154 109,100 91,100" fill="#fff" fill-opacity=".88"/><circle cx="100" cy="100" r="5.5" fill="#0E3A5B" stroke="#fff" stroke-width="2"/></svg></div>
-<div class="it">PASSAGE PLAN</div></div>
+<div class="it">PASSAGE PLAN</div><div class="is">MT TITANIA</div></div>
 <script>(function(){var el=document.getElementById("intro");if(!el)return;var seen=false;try{seen=sessionStorage.getItem("sgIntro")==="1";sessionStorage.setItem("sgIntro","1")}catch(e){}
 if(seen){el.remove();return}var rm=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches,end=function(){clearTimeout(t);el.remove()},t=setTimeout(end,rm?1200:2450);
 el.addEventListener("click",function(){clearTimeout(t);el.classList.add("out");setTimeout(function(){el.remove()},320)})})()</script>
