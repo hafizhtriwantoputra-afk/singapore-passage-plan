@@ -381,11 +381,29 @@ function buildLib(L,ovS,ovT,variants){const N=NET.nodes;let tot=0;const W=L.wp.m
    ...cr.map(c=>`<b>Auto-corrected</b> WP${c[1]}: ${esc(c[2])} — check the original file.`),
    ...(L.ext?["Route to/from a Malaysian port — crosses the Singapore Strait TSS."]:[]),
    "Must be verified on corrected ENC/ECDIS and the latest Port Marine Notices."]}}
-// Auto remark for WP1 / last WP when empty (or the anchorage placeholder): report to the control of the start/end place.
-function ctlOf(id){const n=NET.nodes[id];if(!n)return null;if(n.term==="Brani"||/^B_Brani/.test(id))return "Keppel Control VHF Ch. 05";const a=n.anc&&DATA.anc.find(x=>x.c===n.anc);return a&&a.s==="Eastern"?"East Control VHF Ch. 12":null}
-function fillEnds(wp){[[0,"Departure"],[wp.length-1,"Arrival"]].forEach(([i,kind])=>{if(wp.length<2)return;const w=wp[i],c=w.id&&!/manual position/.test(w.name||"")?ctlOf(w.id):null;if(!c)return;
- const txt=String(w.note||"").replace(/<[^>]+>/g,"").trim();if(txt&&!/posisi labuh/.test(txt))return;
- const pre=(String(w.note||"").match(/^<i>\[draf\]<\/i>\s*/)||[""])[0],r=kind+" Report to "+c;w.note=pre+r;w.remark=r});return wp}
+// ===== Auto remarks for WP1 / last WP / entering a new control sector (only when the remark is empty) =====
+// Sectors measured from SPI 2026 "Reporting Sectors" chartlet (approximate, +/-0.5 NM); terminals and anchorages are mapped by name first.
+const CTLS={E:["East Control","12"],K:["Keppel Control","05"],W:["West Control","68"],P:["Pasir Panjang Control","18"],J:["Jurong Control","22"]};
+const SECP={E:[[[1.3405,104.0216],[1.3353,104.0415],[1.3355,104.0487],[1.3151,104.0668],[1.2930,104.0828],[1.2674,103.9744],[1.2101,103.8552],[1.2164,103.8467],[1.2257,103.8399],[1.2320,103.8362],[1.2357,103.8323],[1.2403,103.8278],[1.2535,103.8498],[1.2531,103.8599],[1.2589,103.8608],[1.2638,103.8680],[1.2728,103.8628],[1.2840,103.8739],[1.2979,103.9031],[1.3108,103.9401],[1.3193,103.9820],[1.3122,104.0123],[1.3296,104.0181]]],W:[[[1.1959,103.6826],[1.2367,103.7423],[1.2371,103.7482],[1.2432,103.7637],[1.2421,103.7853],[1.2608,103.8088],[1.2403,103.8278],[1.2357,103.8323],[1.2320,103.8362],[1.2257,103.8399],[1.2164,103.8467],[1.2101,103.8552],[1.1763,103.7896],[1.1451,103.7363]],[[1.2742,103.7398],[1.2628,103.7585],[1.2432,103.7637],[1.2371,103.7482],[1.2367,103.7423],[1.1959,103.6826],[1.2046,103.6556],[1.2247,103.6738]]],P:[[[1.2742,103.7398],[1.2628,103.7585],[1.2432,103.7637],[1.2421,103.7853],[1.2608,103.8088],[1.2651,103.8024],[1.2750,103.8000],[1.2833,103.7833],[1.2967,103.7583],[1.3000,103.7417]]]};
+const TERM_CTL={"Brani":"K","Tanjong Pagar":"K","Pasir Panjang":"P","Jurong Port":"P","Advario JI":"P","JP Universal":"W","Horizon":"W","Advario Helios":"J"};
+function inPoly(la,lo,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>lo)!==(b[1]>lo)&&la<(b[0]-a[0])*(lo-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
+function polyDist(la,lo,p){let m=1e9;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[j],b=p[i],dx=b[1]-a[1],dy=b[0]-a[0],t=dx||dy?Math.max(0,Math.min(1,((lo-a[1])*dx+(la-a[0])*dy)/(dx*dx+dy*dy))):0;m=Math.min(m,Math.hypot(lo-(a[1]+t*dx),la-(a[0]+t*dy))*60)}return m}
+function secAt(la,lo){for(const k in SECP)for(const p of SECP[k])if(inPoly(la,lo,p))return k;
+ const m=(la-1)*60,n=(lo-103)*60;if(n>=47.5&&n<=52.3&&m>=14.9&&m<=16.8)return "K";if(n<41.6&&m<18.5&&m>9.5)return "J";
+ let best=null,bd=1.5;for(const k in SECP)for(const p of SECP[k]){const d=polyDist(la,lo,p);if(d<bd){bd=d;best=k}}return best}
+function ctlOf(w){if(!w||/manual position/.test(w.name||""))return null;const n=w.id&&NET.nodes[w.id];
+ if(n){if(n.term&&TERM_CTL[n.term])return TERM_CTL[n.term];if(n.anc){const a=DATA.anc.find(x=>x.c===n.anc);return a?(a.s==="Eastern"?"E":"W"):null}}
+ return isFinite(w.lat)&&isFinite(w.lon)?secAt(+w.lat,+w.lon):null}
+function fillEnds(wp){if(wp.length<2)return wp;const last=wp.length-1,c0=ctlOf(wp[0]),c1=ctlOf(wp[last]);
+ const empty=w=>{const t=String(w.note||"").replace(/<[^>]+>/g,"").replace(/\[draf\]/g,"").trim();return !t||/posisi labuh/.test(t)};
+ const put=(w,txt)=>{if(!empty(w))return;const pre=(String(w.note||"").match(/^<i>\[draf\]<\/i>\s*/)||[""])[0];w.note=pre+txt;w.remark=txt};
+ const cs=k=>CTLS[k][0]+" VHF Ch. "+CTLS[k][1];
+ if(c0)put(wp[0],"Departure Report to "+cs(c0));
+ if(c1)put(wp[last],"Arrival Report to "+cs(c1));
+ let cur=c0;for(let i=1;i<last;i++){const c=ctlOf(wp[i]);if(!c||c===cur)continue;cur=c;
+  if(c==="J"&&c0!=="J"&&c1!=="J")continue;  // Jurong Control only when the route starts/ends in it (JPUT etc. follow West Control)
+  put(wp[i],"Entering "+cs(c))}
+ return wp}
 function buildRoute(s,t,a,b){const r=buildRoute0(s,t,a,b);if(r){applyNotes(r.wp);fillEnds(r.wp)}return r}
 function buildRoute0(s,t,ovS,ovT){const V=libFor(s,t);if(V.length&&!$("ppNoLib").checked){return buildLib(V[Math.min(libPick,V.length-1)],ovS,ovT,V)}
  let p=netPath(s,t);if(!p)return null;

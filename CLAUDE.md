@@ -48,7 +48,7 @@ Structure: CSS (`<style>`, top of file) → `<section class="page">` × 4 (`pgDa
 
 ## Conventions and gotchas
 
-- **Bump `VERSION` in `sw.js` whenever any file changes** (currently `passage-plan-sg-v8`), otherwise installed phones keep the old copy. After a push, phones need two opens to pick up the new version.
+- **Bump `VERSION` in `sw.js` whenever any file changes** (currently `passage-plan-sg-v9`), otherwise installed phones keep the old copy. After a push, phones need two opens to pick up the new version.
 - Navigation numbers (routes, waypoints, UKC, buoys, drafts, hydrostatics) are safety-critical. Do not change or "fix" them unless explicitly asked.
 - Fonts load from Google Fonts (IBM Plex); offline the system fallback is used.
 - Everything is one file by design; do not introduce a build step or split files without being asked.
