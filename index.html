@@ -534,7 +534,8 @@ function openEdit(i){const w0=R.wp[i];if(!w0)return;const rows=ppCalc(),last=i==
  $("eCancel").onclick=closeSheet;$("eDel").onclick=()=>{closeSheet();delWp(i)};
  $("eSave").onclick=()=>{ensureEdit();const w=edit.wp[i];const la=parseDM($("eLat").value),lo=parseDM($("eLon").value);if(la==null||lo==null){alert("Position format: 01 17.691 N / 103 56.911 E");return}
   if(Math.abs(la-w.lat)>1e-7||Math.abs(lo-w.lon)>1e-7){w.lat=la;w.lon=lo;w.id=null}
-  w.name=$("eName").value;w.remark=$("eRm").value.trim();const u=$("eUkc").value.trim();w.ukc=u===""?"":(isNaN(+u)?u:+u);w.fix=`${$("eFm").value.trim()||"R,V,C"} / ${$("eFi").value.trim()||"5 min"}`;w.type=$("eTy").value;
+  const cl=x=>String(x||"").replace(/ \((draft|manual position)\)/g,""),lastI=edit.wp.length-1,autoOld=cl(edit.wp[0].name)+" → "+cl(edit.wp[lastI].name),wasAuto=edit.name===autoOld;
+  w.name=$("eName").value;if(wasAuto&&(i===0||i===lastI))edit.name=cl(edit.wp[0].name)+" → "+cl(edit.wp[lastI].name);w.remark=$("eRm").value.trim();const u=$("eUkc").value.trim();w.ukc=u===""?"":(isNaN(+u)?u:+u);w.fix=`${$("eFm").value.trim()||"R,V,C"} / ${$("eFi").value.trim()||"5 min"}`;w.type=$("eTy").value;
   if($("eSpd")){const v=parseFloat($("eSpd").value);if(v>0&&v!==cur){if(!useLeg()){const ps=planSpd();edit.wp.forEach((x,k)=>{if(k<edit.wp.length-1)x.spd=ps});$("ppLeg").checked=true}w.spd=v}}
   if($("eFut").checked){WPN[wpKey(w)]={remark:w.remark,ukc:w.ukc,fix:w.fix};lsSet("sgWpNotes",WPN)}
   edToR();closeSheet();ppRender();apply()}}
@@ -663,14 +664,16 @@ function dmParts(v,isLat){const a=Math.abs(v);let d=Math.floor(a),m=Math.round((
 function xlDate(s){if(!s)return null;const [y,m,d]=s.split("-").map(Number);return (Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/864e5}
 function placeShort(id){const n=NET.nodes[id]||{};return n.kind==="anchorage"?(n.n||id).split(" – ")[0]:(n.n||id).replace(/\s*\(.*?\)\s*/g," ").replace(/#\s*/g,"").replace(/\s+/g," ").trim().toUpperCase()}
 function placeLabel(id){return placeShort(id).toUpperCase()+", SINGAPORE"}
+// From/To names for forms: taken from the first/last waypoint, so renaming WP1/last in the editor carries into Excel, PDF and file names.
+function endShort(w){const nm=String(w&&w.name||"").replace(/ \((draft|manual position|draf)\)/g,"");return / – /.test(nm)?nm.split(" – ")[0]:nm.replace(/\s*\(.*?\)\s*/g," ").replace(/#\s*/g,"").replace(/\s+/g," ").trim().toUpperCase()}
 function formData(){const rows=ppCalc(),spd=parseFloat($("ppSpd").value)||8,n=rows.length;
  const fa=parseFloat($("ppDf").value),aa=parseFloat($("ppDa").value);
  const enc=rows.map((r,i)=>i<n-1?encLeg(r,rows[i+1]):[encAt(r.lat,r.lon)]);
  const encAll=[];enc.forEach(a=>a.forEach(x=>{if(!encAll.includes(x))encAll.push(x)}));
  const dsp=parseFloat($("ppDisp").value);
  return {off:officers(),rows,spd,n,df:isNaN(fa)?null:fa,da:isNaN(aa)?null:aa,ship:$("ppShip").value||"",voy:$("ppVoy").value||"-",disp:isNaN(dsp)?null:dsp,
-  date:$("ppDate").value,year:($("ppDate").value||new Date().toISOString()).slice(0,4),from:placeLabel($("ppFrom").value),to:placeLabel($("ppTo").value),
-  port:placeShort($("ppFrom").value)+" - "+placeShort($("ppTo").value),nm:nmInfo(),enc,encAll,
+  date:$("ppDate").value,year:($("ppDate").value||new Date().toISOString()).slice(0,4),from:(endShort(rows[0])||placeShort($("ppFrom").value))+", SINGAPORE",to:(endShort(rows[n-1])||placeShort($("ppTo").value))+", SINGAPORE",
+  port:(endShort(rows[0])||placeShort($("ppFrom").value))+" - "+(endShort(rows[n-1])||placeShort($("ppTo").value)),nm:nmInfo(),enc,encAll,
   legSpd:i=>i===n-1?0:(useLeg()&&+rows[i].spd>0?+rows[i].spd:spd),
   fix:r=>{const f=(r.fix||"R,V,C / 5 min").split("/").map(s=>s.trim());return [f[0]||"R,V,C",f[1]||"5 min"]},
   note:r=>String(r.note||"").replace(/<i>\[draf\]<\/i>\s*/g,"").replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").trim()}}
