@@ -533,7 +533,7 @@ function openEdit(i){const w0=R.wp[i];if(!w0)return;const rows=ppCalc(),last=i==
  <button class="btn red" id="eDel">Delete this waypoint</button>`);
  $("eCancel").onclick=closeSheet;$("eDel").onclick=()=>{closeSheet();delWp(i)};
  $("eSave").onclick=()=>{ensureEdit();const w=edit.wp[i];const la=parseDM($("eLat").value),lo=parseDM($("eLon").value);if(la==null||lo==null){alert("Position format: 01 17.691 N / 103 56.911 E");return}
-  if(Math.abs(la-w.lat)>1e-7||Math.abs(lo-w.lon)>1e-7){w.lat=la;w.lon=lo;w.id=null}
+  if(Math.abs(la-w.lat)>1e-5||Math.abs(lo-w.lon)>1e-5){w.lat=la;w.lon=lo;w.id=null}  // the form shows 0.001' (1.7e-5 deg); a name-only edit must keep the exact position and node id
   const cl=x=>String(x||"").replace(/ \((draft|manual position)\)/g,""),lastI=edit.wp.length-1,autoOld=cl(edit.wp[0].name)+" → "+cl(edit.wp[lastI].name),wasAuto=edit.name===autoOld;
   w.name=$("eName").value;if(wasAuto&&(i===0||i===lastI))edit.name=cl(edit.wp[0].name)+" → "+cl(edit.wp[lastI].name);w.remark=$("eRm").value.trim();const u=$("eUkc").value.trim();w.ukc=u===""?"":(isNaN(+u)?u:+u);w.fix=`${$("eFm").value.trim()||"R,V,C"} / ${$("eFi").value.trim()||"5 min"}`;w.type=$("eTy").value;
   if($("eSpd")){const v=parseFloat($("eSpd").value);if(v>0&&v!==cur){if(!useLeg()){const ps=planSpd();edit.wp.forEach((x,k)=>{if(k<edit.wp.length-1)x.spd=ps});$("ppLeg").checked=true}w.spd=v}}
